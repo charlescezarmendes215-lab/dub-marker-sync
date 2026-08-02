@@ -128,14 +128,30 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
     if (real > 0) e.lines = real;
   }
 
-  // Video links
+  // Video links (cells may hold only a hyperlink, with empty visible text)
   const videoLinks: Record<number, string> = {};
   const vlSheet = wb.SheetNames.find((n) => /video.*(download|link)/i.test(n));
-  for (const row of rowsOf(vlSheet)) {
-    const ep = Number(pick(row, ["episode", "Episode No.", "EP"]) || 0);
-    const link = pick(row, ["link", "url", "Download Link"]);
-    if (ep && link) videoLinks[ep] = link;
+  const ws = vlSheet ? wb.Sheets[vlSheet] : undefined;
+  if (ws && ws["!ref"]) {
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let r = range.s.r; r <= range.e.r; r++) {
+      let ep = 0;
+      let link = "";
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const cell = ws[XLSX.utils.encode_cell({ r, c })] as
+          | { v?: unknown; l?: { Target?: string } }
+          | undefined;
+        if (!cell) continue;
+        const target = cell.l?.Target ?? "";
+        const value = norm(cell.v);
+        if (/^https?:\/\//i.test(target)) link = target;
+        else if (/^https?:\/\//i.test(value)) link = value;
+        else if (!ep && /^\d+$/.test(value)) ep = Number(value);
+      }
+      if (ep && link) videoLinks[ep] = link;
+    }
   }
+
 
   const actors: ActorEntry[] = [...actorMap.entries()]
     .map(([actor, e]) => ({ actor, characters: [...e.characters], lines: e.lines }))
