@@ -139,13 +139,15 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
       let link = "";
       for (let c = range.s.c; c <= range.e.c; c++) {
         const cell = ws[XLSX.utils.encode_cell({ r, c })] as
-          | { v?: unknown; l?: { Target?: string } }
+          | { v?: unknown; r?: string; l?: { Target?: string } }
           | undefined;
         if (!cell) continue;
         const target = cell.l?.Target ?? "";
         const value = norm(cell.v);
+        const rich = String(cell.r ?? "").match(/https?:\/\/[^\s<"]+/)?.[0] ?? "";
         if (/^https?:\/\//i.test(target)) link = target;
         else if (/^https?:\/\//i.test(value)) link = value;
+        else if (rich) link = rich;
         else if (!ep && /^\d+$/.test(value)) ep = Number(value);
       }
       if (ep && link) videoLinks[ep] = link;
