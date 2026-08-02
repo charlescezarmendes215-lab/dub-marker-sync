@@ -204,13 +204,6 @@ function Index() {
         {/* Actions */}
         {selected && lines.length > 0 && (
           <section className="grid grid-cols-2 gap-2">
-            <a
-              href={srtDataUri(buildSrt(lines))}
-              download={`Marcadores_${actorName}.srt`}
-              className="col-span-2 rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground active:opacity-80"
-            >
-              Exportar SRT completo
-            </a>
             <button
               onClick={() => {
                 setDownloadIdx(0);
@@ -259,7 +252,17 @@ function Index() {
               </ul>
               <div className="mt-3 flex gap-2">
                 <a
-                  href={srtDataUri(buildSrt(eps))}
+                  href={srtDataUri(
+                    buildSrt(
+                      eps.filter((dialogue) =>
+                        selected.characters.some(
+                          (character) =>
+                            character.trim().toLowerCase() ===
+                            dialogue.character.trim().toLowerCase(),
+                        ),
+                      ),
+                    ),
+                  )}
                   download={`Episodio_${ep}_${actorName}.srt`}
                   className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground active:opacity-80"
                 >
