@@ -89,6 +89,7 @@ function Index() {
   }, [lines]);
 
   const actorName = selected ? sanitize(selected.actor) : "Dublador";
+  const selectedCharacters = selected?.characters ?? [];
   const videoEps = episodes.filter(([ep]) => wbData?.videoLinks[ep]);
 
   async function forceDownload(url: string, filename: string) {
@@ -255,7 +256,7 @@ function Index() {
                   href={srtDataUri(
                     buildSrt(
                       eps.filter((dialogue) =>
-                        selected.characters.some(
+                        selectedCharacters.some(
                           (character) =>
                             character.trim().toLowerCase() ===
                             dialogue.character.trim().toLowerCase(),
