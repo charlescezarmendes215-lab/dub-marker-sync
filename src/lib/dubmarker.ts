@@ -172,9 +172,32 @@ export function filterDialogues(all: Dialogue[], characters: string[]): Dialogue
 
 /** Clean marker SRT: one block per line of the selected actor, invisible text. */
 export function buildSrt(lines: Dialogue[]): string {
-  const blocks = lines
-    .filter((l) => l && l.start && l.end)
-    .map((l, i) => `${i + 1}\n${l.start} --> ${l.end}\n \n`);
+  const sorted = lines
+    .filter((l) => l && l.character && l.start && l.end && toMs(l.end) > toMs(l.start))
+    .sort((a, b) => toMs(a.start) - toMs(b.start) || toMs(a.end) - toMs(b.end));
+
+  const clean: Dialogue[] = [];
+  for (const line of sorted) {
+    const previous = clean[clean.length - 1];
+    if (!previous) {
+      clean.push(line);
+      continue;
+    }
+
+    const sameCharacter =
+      previous.character.trim().toLowerCase() === line.character.trim().toLowerCase();
+    const overlaps = toMs(line.start) <= toMs(previous.end);
+    if (sameCharacter && overlaps) {
+      if (toMs(line.end) > toMs(previous.end)) previous.end = line.end;
+      continue;
+    }
+
+    clean.push(line);
+  }
+
+  const blocks = clean.map(
+    (line, i) => `${i + 1}\n${line.start} --> ${line.end}\n \n`,
+  );
   if (blocks.length === 0) return "1\n00:00:00,000 --> 00:00:01,000\n \n";
   return blocks.join("\n");
 }
