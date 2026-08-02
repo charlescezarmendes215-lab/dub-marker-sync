@@ -42,17 +42,17 @@ function padTime(t: string): string {
   const m = v.match(/^(\d{1,2}):(\d{2}):(\d{2})(?:,(\d{1,3}))?$/);
   if (m) {
     const ms = (m[4] ?? "0").padEnd(3, "0");
-    return `${m[1].padStart(2, "0")}:${m[2]}:${m[3]},${ms}`;
+    return `${(m[1] ?? "0").padStart(2, "0")}:${m[2] ?? "00"}:${m[3] ?? "00"},${ms}`;
   }
   const m2 = v.match(/^(\d{1,2}):(\d{2})(?:,(\d{1,3}))?$/);
-  if (m2) return `00:${m2[1].padStart(2, "0")}:${m2[2]},${(m2[3] ?? "0").padEnd(3, "0")}`;
+  if (m2) return `00:${(m2[1] ?? "0").padStart(2, "0")}:${m2[2] ?? "00"},${(m2[3] ?? "0").padEnd(3, "0")}`;
   return "00:00:00,000";
 }
 
 export function toMs(t: string): number {
   const m = t.match(/^(\d{2}):(\d{2}):(\d{2}),(\d{3})$/);
   if (!m) return 0;
-  return +m[1] * 3600000 + +m[2] * 60000 + +m[3] * 1000 + +m[4];
+  return +(m[1]??0) * 3600000 + +(m[2]??0) * 60000 + +(m[3]??0) * 1000 + +(m[4]??0);
 }
 
 export function fromMs(ms: number): string {
@@ -68,10 +68,11 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
   const wb = XLSX.read(data, { type: "array" });
   const sheet = (name: string) =>
     wb.SheetNames.find((n) => key(n) === key(name));
-  const rowsOf = (name?: string) =>
-    name
-      ? (XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: "" }) as Record<string, unknown>[])
-      : [];
+  const rowsOf = (name?: string) => {
+    const ws = name ? wb.Sheets[name] : undefined;
+    if (!ws) return [] as Record<string, unknown>[];
+    return XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, unknown>[];
+  };
 
   // Character List -> actor mapping
   const charToActor: Record<string, string> = {};
@@ -99,9 +100,9 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
       let start = "";
       let end = "";
       if (tc.includes("-->")) {
-        const [a, b] = tc.split("-->");
-        start = padTime(a);
-        end = padTime(b);
+        const parts = tc.split("-->");
+        start = padTime(parts[0] ?? "");
+        end = padTime(parts[1] ?? "");
       } else {
         start = padTime(pick(row, ["Start Timecode", "Start", "In"]) || tc);
         end = padTime(pick(row, ["End Timecode", "End", "Out"]) || start);
