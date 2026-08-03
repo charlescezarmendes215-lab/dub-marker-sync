@@ -11,6 +11,7 @@ import {
   type Workbook,
   type ActorEntry,
 } from "@/lib/dubmarker";
+import bgAsset from "@/assets/dubmarker-bg.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
