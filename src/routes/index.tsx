@@ -44,7 +44,17 @@ function Index() {
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadIdx, setDownloadIdx] = useState(0);
   const [busyEp, setBusyEp] = useState<number | null>(null);
+  const [copiedEp, setCopiedEp] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function copyLines(lines: Dialogue[]) {
+    const text = lines.map((l) => `[${l.start}] ${l.text}`).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // fallback silencioso — o usuário também pode selecionar o texto manualmente
+    }
+  }
 
   async function onFile(f: File) {
     setLoading(true);
@@ -240,7 +250,7 @@ function Index() {
               <p className="mt-1 text-xs text-muted-foreground">
                 {eps[0]?.start} → {eps[eps.length - 1]?.end}
               </p>
-              <ul className="mt-3 space-y-1.5">
+              <ul className="mt-3 space-y-1.5 select-text">
                 {eps.slice(0, 4).map((l, i) => (
                   <li key={i} className="rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs">
                     <span className="font-mono text-primary">{l.start}</span>
@@ -251,7 +261,7 @@ function Index() {
                   <li className="px-1 text-xs text-muted-foreground">+ {eps.length - 4} falas…</li>
                 )}
               </ul>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <a
                   href={srtDataUri(
                     buildSrt(
@@ -269,6 +279,16 @@ function Index() {
                 >
                   SRT
                 </a>
+                <button
+                  onClick={async () => {
+                    await copyLines(eps);
+                    setCopiedEp(ep);
+                    setTimeout(() => setCopiedEp(null), 2000);
+                  }}
+                  className="flex-1 rounded-lg border border-border px-3 py-2 text-center text-xs font-medium active:opacity-80"
+                >
+                  {copiedEp === ep ? "Copiado!" : "Copiar falas"}
+                </button>
                 {link && (
                   <>
                     <button
