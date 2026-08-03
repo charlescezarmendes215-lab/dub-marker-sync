@@ -11,6 +11,7 @@ import {
   type Workbook,
   type ActorEntry,
 } from "@/lib/dubmarker";
+import bgAsset from "@/assets/dubmarker-bg.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -127,8 +128,14 @@ function Index() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/90 px-4 py-4 backdrop-blur">
+    <main className="relative min-h-screen overflow-hidden text-foreground">
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat bg-fixed"
+        style={{ backgroundImage: `url(${bgAsset.url})` }}
+      />
+      <div className="fixed inset-0 -z-10 bg-black/80 backdrop-blur-[8px]" />
+
+      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/80 px-4 py-4 backdrop-blur-md">
         <h1 className="text-lg font-semibold tracking-tight">
           Dub<span className="text-primary">Marker</span> App
         </h1>
@@ -137,9 +144,9 @@ function Index() {
         </p>
       </header>
 
-      <div className="mx-auto max-w-xl space-y-5 px-4 pb-24 pt-5">
+      <div className="relative mx-auto max-w-xl space-y-5 px-4 pb-24 pt-5">
         {/* Upload */}
-        <section className="rounded-2xl border border-border bg-card p-4">
+        <section className="rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
           <input
             ref={fileRef}
             type="file"
@@ -167,7 +174,7 @@ function Index() {
 
         {/* Combobox */}
         {wbData && (
-          <section className="relative rounded-2xl border border-border bg-card p-4">
+          <section className="relative rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
             <label className="text-xs font-medium text-muted-foreground">Dublador / Ator</label>
             <input
               value={query}
@@ -180,7 +187,7 @@ function Index() {
               className="mt-2 w-full rounded-xl border border-input bg-secondary px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
             />
             {open && (
-              <ul className="absolute left-4 right-4 z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-border bg-popover shadow-xl">
+              <ul className="absolute left-4 right-4 z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-border/60 bg-popover/95 shadow-xl backdrop-blur-md">
                 {options.length === 0 && (
                   <li className="px-3 py-3 text-sm text-muted-foreground">Nenhum resultado</li>
                 )}
@@ -240,10 +247,10 @@ function Index() {
         {episodes.map(([ep, eps]) => {
           const link = wbData?.videoLinks[ep];
           return (
-            <article key={ep} className="rounded-2xl border border-border bg-card p-4">
+            <article key={ep} className="rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Episódio {ep}</h2>
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                <span className="rounded-full bg-secondary/80 px-2 py-0.5 text-xs text-muted-foreground">
                   {eps.length} falas
                 </span>
               </div>
@@ -285,7 +292,7 @@ function Index() {
                     setCopiedEp(ep);
                     setTimeout(() => setCopiedEp(null), 2000);
                   }}
-                  className="flex-1 rounded-lg border border-border px-3 py-2 text-center text-xs font-medium active:opacity-80"
+                  className="flex-1 rounded-lg border border-border/60 px-3 py-2 text-center text-xs font-medium active:opacity-80"
                 >
                   {copiedEp === ep ? "Copiado!" : "Copiar falas"}
                 </button>
@@ -297,7 +304,7 @@ function Index() {
                         await forceDownload(link, `Episodio_${ep}_${actorName}.mp4`);
                         setBusyEp(null);
                       }}
-                      className="flex-1 rounded-lg border border-border px-3 py-2 text-xs font-medium active:opacity-80"
+                      className="flex-1 rounded-lg border border-border/60 px-3 py-2 text-xs font-medium active:opacity-80"
                     >
                       {busyEp === ep ? "Baixando…" : "Vídeo"}
                     </button>
@@ -305,7 +312,7 @@ function Index() {
                       href={link}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground"
+                      className="rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground"
                     >
                       Prévia
                     </a>
@@ -320,7 +327,7 @@ function Index() {
       {/* Download modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-40 flex items-end bg-black/70">
-          <div className="max-h-[85vh] w-full overflow-auto rounded-t-3xl border-t border-border bg-card p-4">
+          <div className="max-h-[85vh] w-full overflow-auto rounded-t-3xl border-t border-border/60 bg-card/90 p-4 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">Baixar vídeos</h3>
               <button
