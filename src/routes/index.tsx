@@ -56,8 +56,6 @@ function Index() {
     }
   }
 
-
-
   async function onFile(f: File) {
     setLoading(true);
     setError(null);
