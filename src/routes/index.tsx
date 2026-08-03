@@ -128,8 +128,14 @@ function Index() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/90 px-4 py-4 backdrop-blur">
+    <main className="relative min-h-screen overflow-hidden text-foreground">
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat bg-fixed"
+        style={{ backgroundImage: `url(${bgAsset.url})` }}
+      />
+      <div className="fixed inset-0 -z-10 bg-black/80 backdrop-blur-[8px]" />
+
+      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/80 px-4 py-4 backdrop-blur-md">
         <h1 className="text-lg font-semibold tracking-tight">
           Dub<span className="text-primary">Marker</span> App
         </h1>
@@ -138,7 +144,7 @@ function Index() {
         </p>
       </header>
 
-      <div className="mx-auto max-w-xl space-y-5 px-4 pb-24 pt-5">
+      <div className="relative mx-auto max-w-xl space-y-5 px-4 pb-24 pt-5">
         {/* Upload */}
         <section className="rounded-2xl border border-border bg-card p-4">
           <input
