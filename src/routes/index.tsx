@@ -44,7 +44,17 @@ function Index() {
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadIdx, setDownloadIdx] = useState(0);
   const [busyEp, setBusyEp] = useState<number | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [copiedEp, setCopiedEp] = useState<number | null>(null);
+
+  async function copyLines(lines: Dialogue[]) {
+    const text = lines.map((l) => `[${l.start}] ${l.text}`).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // fallback silencioso — o usuário também pode selecionar o texto manualmente
+    }
+  }
+
 
   async function onFile(f: File) {
     setLoading(true);
