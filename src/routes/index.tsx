@@ -174,7 +174,7 @@ function Index() {
 
         {/* Combobox */}
         {wbData && (
-          <section className="relative rounded-2xl border border-border bg-card p-4">
+          <section className="relative rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
             <label className="text-xs font-medium text-muted-foreground">Dublador / Ator</label>
             <input
               value={query}
@@ -187,7 +187,7 @@ function Index() {
               className="mt-2 w-full rounded-xl border border-input bg-secondary px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
             />
             {open && (
-              <ul className="absolute left-4 right-4 z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-border bg-popover shadow-xl">
+              <ul className="absolute left-4 right-4 z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-border/60 bg-popover/95 shadow-xl backdrop-blur-md">
                 {options.length === 0 && (
                   <li className="px-3 py-3 text-sm text-muted-foreground">Nenhum resultado</li>
                 )}
