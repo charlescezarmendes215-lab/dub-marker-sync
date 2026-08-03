@@ -146,7 +146,7 @@ function Index() {
 
       <div className="relative mx-auto max-w-xl space-y-5 px-4 pb-24 pt-5">
         {/* Upload */}
-        <section className="rounded-2xl border border-border bg-card p-4">
+        <section className="rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
           <input
             ref={fileRef}
             type="file"
