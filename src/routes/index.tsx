@@ -45,6 +45,7 @@ function Index() {
   const [downloadIdx, setDownloadIdx] = useState(0);
   const [busyEp, setBusyEp] = useState<number | null>(null);
   const [copiedEp, setCopiedEp] = useState<number | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   async function copyLines(lines: Dialogue[]) {
     const text = lines.map((l) => `[${l.start}] ${l.text}`).join("\n");
@@ -54,6 +55,7 @@ function Index() {
       // fallback silencioso — o usuário também pode selecionar o texto manualmente
     }
   }
+
 
 
   async function onFile(f: File) {
