@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Organize scripts de dublagem: filtre por dublador, gere SRT limpo para CapCut e baixe os vídeos por episódio.",
+          "Carregue a planilha de dublagem, filtre por dublador e gere marcadores SRT para o CapCut e links de vídeo por episódio.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
