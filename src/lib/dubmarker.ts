@@ -52,7 +52,7 @@ function padTime(t: string): string {
 export function toMs(t: string): number {
   const m = t.match(/^(\d{2}):(\d{2}):(\d{2}),(\d{3})$/);
   if (!m) return 0;
-  return +(m[1]??0) * 3600000 + +(m[2]??0) * 60000 + +(m[3]??0) * 1000 + +(m[4]??0);
+  return +(m[1] ?? 0) * 3600000 + +(m[2] ?? 0) * 60000 + +(m[3] ?? 0) * 1000 + +(m[4] ?? 0);
 }
 
 export function fromMs(ms: number): string {
@@ -68,7 +68,7 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
   const wb = XLSX.read(data, { type: "array" });
   const sheet = (name: string) =>
     wb.SheetNames.find((n) => key(n) === key(name));
-  const rowsOf = (name?: string) => {
+  const rowsOf = (name: string) => {
     const ws = name ? wb.Sheets[name] : undefined;
     if (!ws) return [] as Record<string, unknown>[];
     return XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, unknown>[];
@@ -77,26 +77,32 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
   // Character List -> actor mapping
   const charToActor: Record<string, string> = {};
   const actorMap = new Map<string, { characters: Set<string>; lines: number }>();
-  for (const row of rowsOf(sheet("Character List"))) {
-    const role = pick(row, ["Labeled Role", "Role-EN", "Character"]);
-    const actor = pick(row, ["Voice Actor", "VA", "Dublador"]);
-    const lines = Number(pick(row, ["Number of Lines", "台词数"]) || 0);
-    if (!role || !actor) continue;
-    charToActor[role] = actor;
-    const e = actorMap.get(actor) ?? { characters: new Set<string>(), lines: 0 };
-    e.characters.add(role);
-    e.lines += Number.isFinite(lines) ? lines : 0;
-    actorMap.set(actor, e);
+  
+  const charSheetName = sheet("Character List") ?? sheet("Personagens") ?? sheet("Actors");
+  if (charSheetName) {
+    for (const row of rowsOf(charSheetName)) {
+      const role = pick(row, ["Labeled Role", "Role-EN", "Character", "Personagem", "Papel"]);
+      const actor = pick(row, ["Voice Actor", "VA", "Dublador", "Ator"]);
+      const lines = Number(pick(row, ["Number of Lines", "台词数", "Linhas", "Falas"]));
+      if (!role || !actor) continue;
+      charToActor[role] = actor;
+      const e = actorMap.get(actor) ?? { characters: new Set<string>(), lines: 0 };
+      e.characters.add(role);
+      e.lines += Number.isFinite(lines) ? lines : 0;
+      actorMap.set(actor, e);
+    }
   }
 
   // Dialogue sheets
   const dialogues: Dialogue[] = [];
-  const dialogueSheets = wb.SheetNames.filter((n) => /dialogue/i.test(n));
-  for (const sn of dialogueSheets) {
+  const dialogueSheets = wb.SheetNames.filter((n) => /dialogue|falas|script|legenda/i.test(n));
+  const targetSheets = dialogueSheets.length > 0 ? dialogueSheets : wb.SheetNames;
+
+  for (const sn of targetSheets) {
     for (const row of rowsOf(sn)) {
-      const character = pick(row, ["Labeled Role", "Labeled Role-EN", "Character"]);
+      const character = pick(row, ["Labeled Role", "Labeled Role-EN", "Character", "Personagem", "Papel"]);
       if (!character) continue;
-      const tc = pick(row, ["Timecode", "Time Code"]);
+      const tc = pick(row, ["Timecode", "Time Code", "Tempo"]);
       let start = "";
       let end = "";
       if (tc.includes("-->")) {
@@ -104,16 +110,17 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
         start = padTime(parts[0] ?? "");
         end = padTime(parts[1] ?? "");
       } else {
-        start = padTime(pick(row, ["Start Timecode", "Start", "In"]) || tc);
-        end = padTime(pick(row, ["End Timecode", "End", "Out"]) || start);
+        start = padTime(pick(row, ["Start Timecode", "Start", "Inicio", "In"]));
+        end = padTime(pick(row, ["End Timecode", "End", "Fim", "Out"]));
       }
-      if (toMs(end) <= toMs(start)) end = fromMs(toMs(start) + 600);
-      const ep = Number(pick(row, ["Episode No.", "Episode", "EP"]) || 0);
+      if (toMs(end) <= toMs(start)) end = fromMs(toMs(start) + 1000);
+      const ep = Number(pick(row, ["Episode No.", "Episode", "Episodio", "Ep"]));
+      
       dialogues.push({
         episode: Number.isFinite(ep) ? ep : 0,
-        index: Number(pick(row, ["Subtitle Index", "Index"]) || 0),
+        index: Number(pick(row, ["Subtitle Index", "Index", "ID"])) || dialogues.length + 1,
         character,
-        text: pick(row, ["Translated Text", "Source Text", "Text"]),
+        text: pick(row, ["Translated Text", "Source Text", "Text", "Texto", "Fala"]),
         start,
         end,
       });
@@ -128,9 +135,9 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
     if (real > 0) e.lines = real;
   }
 
-  // Video links (cells may hold only a hyperlink, with empty visible text)
+  // Video links
   const videoLinks: Record<number, string> = {};
-  const vlSheet = wb.SheetNames.find((n) => /video.*(download|link)/i.test(n));
+  const vlSheet = wb.SheetNames.find((n) => /video.*download|links|videos/i.test(n));
   const ws = vlSheet ? wb.Sheets[vlSheet] : undefined;
   if (ws && ws["!ref"]) {
     const range = XLSX.utils.decode_range(ws["!ref"]);
@@ -138,13 +145,11 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
       let ep = 0;
       let link = "";
       for (let c = range.s.c; c <= range.e.c; c++) {
-        const cell = ws[XLSX.utils.encode_cell({ r, c })] as
-          | { v?: unknown; r?: string; l?: { Target?: string } }
-          | undefined;
+        const cell = ws[XLSX.utils.encode_cell({ r, c })] as { v?: unknown; l?: { Target?: string } } | undefined;
         if (!cell) continue;
         const target = cell.l?.Target ?? "";
         const value = norm(cell.v);
-        const rich = String(cell.r ?? "").match(/https?:\/\/[^\s<"]+/)?.[0] ?? "";
+        const rich = String(cell.r ?? "").match(/https?:\/\/[^\s]+/)?.[0] ?? "";
         if (/^https?:\/\//i.test(target)) link = target;
         else if (/^https?:\/\//i.test(value)) link = value;
         else if (rich) link = rich;
@@ -154,7 +159,6 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
     }
   }
 
-
   const actors: ActorEntry[] = [...actorMap.entries()]
     .map(([actor, e]) => ({ actor, characters: [...e.characters], lines: e.lines }))
     .sort((a, b) => b.lines - a.lines);
@@ -162,15 +166,15 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
   return { dialogues, actors, videoLinks, charToActor };
 }
 
-/** Strict: only dialogues whose character belongs to the selected actor. */
+/** Strict: only dialogues whose character belongs to the selected list */
 export function filterDialogues(all: Dialogue[], characters: string[]): Dialogue[] {
   const set = new Set(characters.map((c) => c.trim().toLowerCase()));
   return all
     .filter((d) => d && d.character && set.has(d.character.trim().toLowerCase()))
-    .sort((a, b) => a.episode - b.episode || toMs(a.start) - toMs(b.start));
+    .sort((a, b) => a.episode - b.episode || toMs(a.start) - toMs(b.start) || toMs(a.end) - toMs(b.end));
 }
 
-/** Clean marker SRT: one block per line of the selected actor, invisible text. */
+/** Clean marker SRT: one block per line of the selected actor, joining overlapping blocks */
 export function buildSrt(lines: Dialogue[]): string {
   const sorted = lines
     .filter((l) => l && l.character && l.start && l.end && toMs(l.end) > toMs(l.start))
@@ -180,24 +184,28 @@ export function buildSrt(lines: Dialogue[]): string {
   for (const line of sorted) {
     const previous = clean[clean.length - 1];
     if (!previous) {
-      clean.push(line);
+      clean.push({ ...line });
       continue;
     }
 
-    const sameCharacter =
-      previous.character.trim().toLowerCase() === line.character.trim().toLowerCase();
+    const sameCharacter = previous.character.trim().toLowerCase() === line.character.trim().toLowerCase();
     const overlaps = toMs(line.start) <= toMs(previous.end);
-    if (sameCharacter && overlaps) {
-      if (toMs(line.end) > toMs(previous.end)) previous.end = line.end;
-      continue;
-    }
 
-    clean.push(line);
+    if (sameCharacter && overlaps) {
+      // Se for o mesmo personagem e houver sobreposição, estende o tempo final
+      if (toMs(line.end) > toMs(previous.end)) {
+        previous.end = line.end;
+      }
+    } else if (!overlaps) {
+      // Se não houver sobreposição, adiciona como novo bloco isolado
+      clean.push({ ...line });
+    }
   }
 
   const blocks = clean.map(
-    (line, i) => `${i + 1}\n${line.start} --> ${line.end}\n \n`,
+    (line, i) => `${i + 1}\n${line.start} --> ${line.end}\n \n`
   );
+
   if (blocks.length === 0) return "1\n00:00:00,000 --> 00:00:01,000\n \n";
   return blocks.join("\n");
 }
@@ -208,10 +216,10 @@ export function srtDataUri(content: string): string {
   return `data:application/x-subrip;base64,${b64}`;
 }
 
-export function textDataUri(content: string, mime = "text/plain;charset=utf-8"): string {
-  return `data:${mime};base64,${btoa(unescape(encodeURIComponent(content || " ")))}`;
+export function textDataUri(content: string, mime = "text/plain"): string {
+  return `data:${mime};base64,${btoa(unescape(encodeURIComponent(content)))}`;
 }
 
 export function sanitize(s: string): string {
-  return s.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "") || "arquivo";
+  return s.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^|_$/g, "");
 }
