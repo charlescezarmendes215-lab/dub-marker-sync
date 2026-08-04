@@ -12,6 +12,7 @@ import {
   type ActorEntry,
 } from "@/lib/dubmarker";
 import bgAsset from "@/assets/dubmarker-bg.png.asset.json";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -142,6 +143,7 @@ function Index() {
         <p className="mt-0.5 text-xs text-muted-foreground">
           Marcadores de tempo para dubladores · CapCut
         </p>
+        <InstallPrompt />
       </header>
 
       <div className="relative mx-auto max-w-xl space-y-5 px-4 pb-24 pt-5">
