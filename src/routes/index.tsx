@@ -54,7 +54,7 @@ function Index() {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // fallback silencioso — o usuário também pode selecionar o texto manualmente
+      // fallback silencioso
     }
   }
 
@@ -63,7 +63,9 @@ function Index() {
     setError(null);
     try {
       const parsed = parseWorkbook(await f.arrayBuffer());
-      if (parsed.actors.length === 0) throw new Error("Nenhum dublador encontrado na aba 'Character List'.");
+      if (parsed.actors.length === 0) {
+        throw new Error("Nenhum dublador ou personagem foi identificado na planilha.");
+      }
       setWbData(parsed);
       setSelected(null);
       setQuery("");
@@ -85,6 +87,7 @@ function Index() {
     );
   }, [wbData, query]);
 
+  // Filtra as linhas garantindo a lista exata do dublador selecionado
   const lines: Dialogue[] = useMemo(
     () => (wbData && selected ? filterDialogues(wbData.dialogues, selected.characters) : []),
     [wbData, selected],
@@ -101,7 +104,10 @@ function Index() {
   }, [lines]);
 
   const actorName = selected ? sanitize(selected.actor) : "Dublador";
-  const selectedCharacters = selected?.characters ?? [];
+  const selectedCharacters = useMemo(
+    () => (selected ? selected.characters.map((c) => c.trim().toLowerCase()) : []),
+    [selected],
+  );
   const videoEps = episodes.filter(([ep]) => wbData?.videoLinks[ep]);
 
   async function forceDownload(url: string, filename: string) {
@@ -248,41 +254,36 @@ function Index() {
         {/* Episode cards */}
         {episodes.map(([ep, eps]) => {
           const link = wbData?.videoLinks[ep];
+          // Garante filtragem estrita das falas do episódio
+          const filteredEps = eps.filter((dialogue) =>
+            selectedCharacters.includes(dialogue.character.trim().toLowerCase()),
+          );
+
           return (
             <article key={ep} className="rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Episódio {ep}</h2>
                 <span className="rounded-full bg-secondary/80 px-2 py-0.5 text-xs text-muted-foreground">
-                  {eps.length} falas
+                  {filteredEps.length} falas
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {eps[0]?.start} → {eps[eps.length - 1]?.end}
+                {filteredEps[0]?.start} → {filteredEps[filteredEps.length - 1]?.end}
               </p>
               <ul className="mt-3 space-y-1.5 select-text">
-                {eps.slice(0, 4).map((l, i) => (
+                {filteredEps.slice(0, 4).map((l, i) => (
                   <li key={i} className="rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs">
                     <span className="font-mono text-primary">{l.start}</span>
                     <span className="ml-2 text-muted-foreground line-clamp-1">{l.text}</span>
                   </li>
                 ))}
-                {eps.length > 4 && (
-                  <li className="px-1 text-xs text-muted-foreground">+ {eps.length - 4} falas…</li>
+                {filteredEps.length > 4 && (
+                  <li className="px-1 text-xs text-muted-foreground">+ {filteredEps.length - 4} falas…</li>
                 )}
               </ul>
               <div className="mt-3 flex flex-wrap gap-2">
                 <a
-                  href={srtDataUri(
-                    buildSrt(
-                      eps.filter((dialogue) =>
-                        selectedCharacters.some(
-                          (character) =>
-                            character.trim().toLowerCase() ===
-                            dialogue.character.trim().toLowerCase(),
-                        ),
-                      ),
-                    ),
-                  )}
+                  href={srtDataUri(buildSrt(filteredEps))}
                   download={`Episodio_${ep}_${actorName}.srt`}
                   className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground active:opacity-80"
                 >
@@ -290,7 +291,7 @@ function Index() {
                 </a>
                 <button
                   onClick={async () => {
-                    await copyLines(eps);
+                    await copyLines(filteredEps);
                     setCopiedEp(ep);
                     setTimeout(() => setCopiedEp(null), 2000);
                   }}
