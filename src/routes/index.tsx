@@ -12,6 +12,7 @@ import {
   type ActorEntry,
 } from "@/lib/dubmarker";
 import bgAsset from "@/assets/dubmarker-bg.png.asset.json";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export const Route = createFileRoute("/")({
   head: () => ({
