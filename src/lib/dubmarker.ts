@@ -66,42 +66,57 @@ export function fromMs(ms: number): string {
 
 export function parseWorkbook(data: ArrayBuffer): Workbook {
   const wb = XLSX.read(data, { type: "array" });
-  const sheet = (name: string) =>
-    wb.SheetNames.find((n) => key(n) === key(name));
+  
+  const findSheet = (patterns: RegExp[]) => 
+    wb.SheetNames.find((n) => patterns.some((p) => p.test(n)));
+
   const rowsOf = (name: string) => {
     const ws = name ? wb.Sheets[name] : undefined;
     if (!ws) return [] as Record<string, unknown>[];
     return XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, unknown>[];
   };
 
-  // Character List -> actor mapping
   const charToActor: Record<string, string> = {};
   const actorMap = new Map<string, { characters: Set<string>; lines: number }>();
-  
-  const charSheetName = sheet("Character List") ?? sheet("Personagens") ?? sheet("Actors");
+
+  // Busca flexível por abas de dubladores/personagens
+  const charSheetName = findSheet([/character/i, /personag/i, /actor/i, /dublador/i, /elenco/i, /lista/i]);
+
   if (charSheetName) {
     for (const row of rowsOf(charSheetName)) {
-      const role = pick(row, ["Labeled Role", "Role-EN", "Character", "Personagem", "Papel"]);
-      const actor = pick(row, ["Voice Actor", "VA", "Dublador", "Ator"]);
-      const lines = Number(pick(row, ["Number of Lines", "台词数", "Linhas", "Falas"]));
-      if (!role || !actor) continue;
-      charToActor[role] = actor;
-      const e = actorMap.get(actor) ?? { characters: new Set<string>(), lines: 0 };
+      const role = pick(row, ["Labeled Role", "Role-EN", "Role", "Character", "Personagem", "Papel", "Nome"]);
+      const actor = pick(row, ["Voice Actor", "VA", "Dublador", "Ator", "Voz"]);
+      const lines = Number(pick(row, ["Number of Lines", "台词数", "Linhas", "Falas", "Total"]));
+      
+      const effectiveActor = actor || role; // Se não houver coluna de dublador, usa o nome do personagem
+      if (!role) continue;
+
+      charToActor[role] = effectiveActor;
+      const e = actorMap.get(effectiveActor) ?? { characters: new Set<string>(), lines: 0 };
       e.characters.add(role);
       e.lines += Number.isFinite(lines) ? lines : 0;
-      actorMap.set(actor, e);
+      actorMap.set(effectiveActor, e);
     }
   }
 
-  // Dialogue sheets
+  // Leitura das abas de diálogo / falas
   const dialogues: Dialogue[] = [];
-  const dialogueSheets = wb.SheetNames.filter((n) => /dialogue|falas|script|legenda/i.test(n));
+  const dialogueSheets = wb.SheetNames.filter((n) => /dialogue|falas|script|legenda|episod/i.test(n));
   const targetSheets = dialogueSheets.length > 0 ? dialogueSheets : wb.SheetNames;
 
   for (const sn of targetSheets) {
+    // Pula a aba de personagens para não ler como fala
+    if (charSheetName && key(sn) === key(charSheetName)) continue;
+
     for (const row of rowsOf(sn)) {
-      const character = pick(row, ["Labeled Role", "Labeled Role-EN", "Character", "Personagem", "Papel"]);
+      const character = pick(row, ["Labeled Role", "Labeled Role-EN", "Role", "Character", "Personagem", "Papel", "Nome"]);
       if (!character) continue;
+
+      const actor = pick(row, ["Voice Actor", "VA", "Dublador", "Ator"]);
+      if (actor) {
+        charToActor[character] = actor;
+      }
+
       const tc = pick(row, ["Timecode", "Time Code", "Tempo"]);
       let start = "";
       let end = "";
@@ -110,32 +125,39 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
         start = padTime(parts[0] ?? "");
         end = padTime(parts[1] ?? "");
       } else {
-        start = padTime(pick(row, ["Start Timecode", "Start", "Inicio", "In"]));
+        start = padTime(pick(row, ["Start Timecode", "Start", "Inicio", "In", "Início"]));
         end = padTime(pick(row, ["End Timecode", "End", "Fim", "Out"]));
       }
       if (toMs(end) <= toMs(start)) end = fromMs(toMs(start) + 1000);
-      const ep = Number(pick(row, ["Episode No.", "Episode", "Episodio", "Ep"]));
+      const ep = Number(pick(row, ["Episode No.", "Episode", "Episodio", "Ep", "Episódio"]));
       
       dialogues.push({
         episode: Number.isFinite(ep) ? ep : 0,
-        index: Number(pick(row, ["Subtitle Index", "Index", "ID"])) || dialogues.length + 1,
+        index: Number(pick(row, ["Subtitle Index", "Index", "ID", "Nº"])) || dialogues.length + 1,
         character,
         text: pick(row, ["Translated Text", "Source Text", "Text", "Texto", "Fala"]),
         start,
         end,
       });
+
+      // Se a aba de personagens não existia, cria a lista dinamicamente com os personagens encontrados nas falas
+      const effectiveActor = actor || charToActor[character] || character;
+      const e = actorMap.get(effectiveActor) ?? { characters: new Set<string>(), lines: 0 };
+      e.characters.add(character);
+      actorMap.set(effectiveActor, e);
     }
   }
 
-  // real line counts from dialogues
+  // Recalcula o total exato de falas por dublador
   const counts = new Map<string, number>();
   for (const d of dialogues) counts.set(d.character, (counts.get(d.character) ?? 0) + 1);
+
   for (const [actor, e] of actorMap) {
     const real = [...e.characters].reduce((n, c) => n + (counts.get(c) ?? 0), 0);
-    if (real > 0) e.lines = real;
+    e.lines = real;
   }
 
-  // Video links
+  // Links de Vídeo
   const videoLinks: Record<number, string> = {};
   const vlSheet = wb.SheetNames.find((n) => /video.*download|links|videos/i.test(n));
   const ws = vlSheet ? wb.Sheets[vlSheet] : undefined;
@@ -160,13 +182,14 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
   }
 
   const actors: ActorEntry[] = [...actorMap.entries()]
+    .filter(([_, e]) => e.lines > 0) // Remove entradas sem nenhuma fala
     .map(([actor, e]) => ({ actor, characters: [...e.characters], lines: e.lines }))
     .sort((a, b) => b.lines - a.lines);
 
   return { dialogues, actors, videoLinks, charToActor };
 }
 
-/** Strict: only dialogues whose character belongs to the selected list */
+/** Strict: apenas diálogos pertencentes aos personagens do dublador selecionado */
 export function filterDialogues(all: Dialogue[], characters: string[]): Dialogue[] {
   const set = new Set(characters.map((c) => c.trim().toLowerCase()));
   return all
@@ -174,7 +197,7 @@ export function filterDialogues(all: Dialogue[], characters: string[]): Dialogue
     .sort((a, b) => a.episode - b.episode || toMs(a.start) - toMs(b.start) || toMs(a.end) - toMs(b.end));
 }
 
-/** Clean marker SRT: one block per line of the selected actor, joining overlapping blocks */
+/** Clean marker SRT: gera o arquivo com apenas os marcadores do dublador selecionado */
 export function buildSrt(lines: Dialogue[]): string {
   const sorted = lines
     .filter((l) => l && l.character && l.start && l.end && toMs(l.end) > toMs(l.start))
@@ -192,12 +215,10 @@ export function buildSrt(lines: Dialogue[]): string {
     const overlaps = toMs(line.start) <= toMs(previous.end);
 
     if (sameCharacter && overlaps) {
-      // Se for o mesmo personagem e houver sobreposição, estende o tempo final
       if (toMs(line.end) > toMs(previous.end)) {
         previous.end = line.end;
       }
     } else if (!overlaps) {
-      // Se não houver sobreposição, adiciona como novo bloco isolado
       clean.push({ ...line });
     }
   }
