@@ -133,7 +133,7 @@ function Index() {
         className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat bg-fixed"
         style={{ backgroundImage: `url(${bgAsset.url})` }}
       />
-      <div className="fixed inset-0 -z-10 bg-black/80 backdrop-blur-[8px]" />
+      <div className="fixed inset-0 -z-10 bg-black/35" />
 
       <header className="sticky top-0 z-20 border-b border-border/60 bg-card/80 px-4 py-4 backdrop-blur-md">
         <h1 className="text-lg font-semibold tracking-tight">
