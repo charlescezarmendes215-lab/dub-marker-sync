@@ -142,6 +142,7 @@ function Index() {
         <p className="mt-0.5 text-xs text-muted-foreground">
           Marcadores de tempo para dubladores · CapCut
         </p>
+        <InstallPrompt />
       </header>
 
       <div className="relative mx-auto max-w-xl space-y-5 px-4 pb-24 pt-5">
