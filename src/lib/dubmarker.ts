@@ -167,7 +167,7 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
       let ep = 0;
       let link = "";
       for (let c = range.s.c; c <= range.e.c; c++) {
-        const cell = ws[XLSX.utils.encode_cell({ r, c })] as { v?: unknown; l?: { Target?: string } } | undefined;
+        const cell = ws[XLSX.utils.encode_cell({ r, c })] as { v?: unknown; r?: unknown; l?: { Target?: string } } | undefined;
         if (!cell) continue;
         const target = cell.l?.Target ?? "";
         const value = norm(cell.v);
