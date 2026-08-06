@@ -244,7 +244,7 @@ export function textDataUri(content: string, mime = "text/plain"): string {
 /** Força o download real do arquivo para a pasta pública "Downloads" (Android/PWA). */
 export function downloadFile(content: string, filename: string, mime: string): void {
   const name = filename.replace(/[\\/:*?"<>|]+/g, "_");
-  const blob = new Blob(["\uFEFF".length ? content : content], { type: mime });
+  const blob = new Blob([content], { type: mime });
 
   const nav = navigator as Navigator & { msSaveOrOpenBlob?: (b: Blob, n: string) => void };
   if (typeof nav.msSaveOrOpenBlob === "function") {
