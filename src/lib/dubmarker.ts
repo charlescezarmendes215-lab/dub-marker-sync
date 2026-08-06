@@ -167,7 +167,7 @@ export function parseWorkbook(data: ArrayBuffer): Workbook {
       let ep = 0;
       let link = "";
       for (let c = range.s.c; c <= range.e.c; c++) {
-        const cell = ws[XLSX.utils.encode_cell({ r, c })] as { v?: unknown; l?: { Target?: string } } | undefined;
+        const cell = ws[XLSX.utils.encode_cell({ r, c })] as { v?: unknown; r?: unknown; l?: { Target?: string } } | undefined;
         if (!cell) continue;
         const target = cell.l?.Target ?? "";
         const value = norm(cell.v);
@@ -240,6 +240,38 @@ export function srtDataUri(content: string): string {
 export function textDataUri(content: string, mime = "text/plain"): string {
   return `data:${mime};base64,${btoa(unescape(encodeURIComponent(content)))}`;
 }
+
+/** Força o download real do arquivo para a pasta pública "Downloads" (Android/PWA). */
+export function downloadFile(content: string, filename: string, mime: string): void {
+  const name = filename.replace(/[\\/:*?"<>|]+/g, "_");
+  const blob = new Blob([content], { type: mime });
+
+  const nav = navigator as Navigator & { msSaveOrOpenBlob?: (b: Blob, n: string) => void };
+  if (typeof nav.msSaveOrOpenBlob === "function") {
+    nav.msSaveOrOpenBlob(blob, name);
+    return;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 4000);
+}
+
+export function downloadSrt(content: string, filename: string): void {
+  const safe = content && content.trim().length > 0 ? content : "1\n00:00:00,000 --> 00:00:01,000\n \n";
+  const name = filename.toLowerCase().endsWith(".srt") ? filename : `${filename}.srt`;
+  downloadFile(safe.replace(/\r?\n/g, "\r\n"), name, "application/x-subrip;charset=utf-8");
+}
+
 
 export function sanitize(s: string): string {
   return s.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^|_$/g, "");

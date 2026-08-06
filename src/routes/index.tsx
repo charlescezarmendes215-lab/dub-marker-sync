@@ -4,8 +4,8 @@ import {
   parseWorkbook,
   filterDialogues,
   buildSrt,
-  srtDataUri,
-  textDataUri,
+  downloadSrt,
+  downloadFile,
   sanitize,
   type Dialogue,
   type Workbook,
@@ -239,15 +239,18 @@ function Index() {
             >
               Baixar vídeos
             </button>
-            <a
-              href={textDataUri(
-                videoEps.map(([ep]) => wbData?.videoLinks[ep]).filter(Boolean).join("\n") + "\n",
-              )}
-              download={`Links_${actorName}.txt`}
+            <button
+              onClick={() =>
+                downloadFile(
+                  videoEps.map(([ep]) => wbData?.videoLinks[ep]).filter(Boolean).join("\n") + "\n",
+                  `Links_${actorName}.txt`,
+                  "text/plain;charset=utf-8",
+                )
+              }
               className="rounded-xl border border-border bg-card px-3 py-3 text-center text-sm font-medium active:opacity-80"
             >
               Lista de links (.txt)
-            </a>
+            </button>
           </section>
         )}
 
@@ -282,13 +285,14 @@ function Index() {
                 )}
               </ul>
               <div className="mt-3 flex flex-wrap gap-2">
-                <a
-                  href={srtDataUri(buildSrt(filteredEps))}
-                  download={`Episodio_${ep}_${actorName}.srt`}
+                <button
+                  onClick={() =>
+                    downloadSrt(buildSrt(filteredEps), `Episodio_${ep}_${actorName}.srt`)
+                  }
                   className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground active:opacity-80"
                 >
                   SRT
-                </a>
+                </button>
                 <button
                   onClick={async () => {
                     await copyLines(filteredEps);
