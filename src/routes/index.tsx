@@ -4,7 +4,7 @@ import {
   parseWorkbook,
   filterDialogues,
   buildSrt,
-  downloadSrt,
+  shareOrDownloadSrt,
   downloadFile,
   sanitize,
   type Dialogue,
