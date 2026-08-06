@@ -272,6 +272,35 @@ export function downloadSrt(content: string, filename: string): void {
   downloadFile(safe.replace(/\r?\n/g, "\r\n"), name, "application/x-subrip;charset=utf-8");
 }
 
+/**
+ * Tenta salvar o SRT pelo seletor nativo do Android (navigator.share com arquivos).
+ * Se não houver suporte (ou o usuário cancelar/falhar), cai no download via Blob.
+ */
+export async function shareOrDownloadSrt(content: string, filename: string): Promise<"shared" | "downloaded"> {
+  const safe = content && content.trim().length > 0 ? content : "1\n00:00:00,000 --> 00:00:01,000\n \n";
+  const name = (filename.toLowerCase().endsWith(".srt") ? filename : `${filename}.srt`).replace(
+    /[\\/:*?"<>|]+/g,
+    "_",
+  );
+  const data = safe.replace(/\r?\n/g, "\r\n");
+
+  try {
+    if (typeof File !== "undefined" && navigator.canShare && navigator.share) {
+      const file = new File([data], name, { type: "application/x-subrip" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Exportar SRT" });
+        return "shared";
+      }
+    }
+  } catch (e) {
+    // Usuário cancelou: não força download duplicado
+    if (e instanceof DOMException && e.name === "AbortError") return "shared";
+  }
+
+  downloadFile(data, name, "application/octet-stream");
+  return "downloaded";
+}
+
 
 export function sanitize(s: string): string {
   return s.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^|_$/g, "");
