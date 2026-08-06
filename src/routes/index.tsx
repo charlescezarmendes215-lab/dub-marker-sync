@@ -287,7 +287,7 @@ function Index() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   onClick={() =>
-                    downloadSrt(buildSrt(filteredEps), `Episodio_${ep}_${actorName}.srt`)
+                    void shareOrDownloadSrt(buildSrt(filteredEps), `Episodio_${ep}_${actorName}.srt`)
                   }
                   className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground active:opacity-80"
                 >
