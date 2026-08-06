@@ -239,15 +239,18 @@ function Index() {
             >
               Baixar vídeos
             </button>
-            <a
-              href={textDataUri(
-                videoEps.map(([ep]) => wbData?.videoLinks[ep]).filter(Boolean).join("\n") + "\n",
-              )}
-              download={`Links_${actorName}.txt`}
+            <button
+              onClick={() =>
+                downloadFile(
+                  videoEps.map(([ep]) => wbData?.videoLinks[ep]).filter(Boolean).join("\n") + "\n",
+                  `Links_${actorName}.txt`,
+                  "text/plain;charset=utf-8",
+                )
+              }
               className="rounded-xl border border-border bg-card px-3 py-3 text-center text-sm font-medium active:opacity-80"
             >
               Lista de links (.txt)
-            </a>
+            </button>
           </section>
         )}
 
