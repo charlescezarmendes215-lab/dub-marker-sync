@@ -304,6 +304,10 @@ export async function shareOrDownloadSrt(content: string, filename: string): Pro
   );
   const data = safe.replace(/\r?\n/g, "\r\n");
 
+  if (await nativeSave(data, name)) return "downloaded";
+
+
+
   try {
     if (typeof File !== "undefined" && navigator.canShare && navigator.share) {
       const file = new File([data], name, { type: "application/x-subrip" });
