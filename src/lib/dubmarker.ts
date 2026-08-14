@@ -241,16 +241,36 @@ export function textDataUri(content: string, mime = "text/plain"): string {
   return `data:${mime};base64,${btoa(unescape(encodeURIComponent(content)))}`;
 }
 
+/** Salva pela pasta pública Downloads no app Android nativo (Capacitor). */
+async function nativeSave(content: string, filename: string): Promise<boolean> {
+  try {
+    const mod = await import("./native-save");
+    if (!mod.isNative()) return false;
+    await mod.saveToDownloads(content, filename);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Força o download real do arquivo para a pasta pública "Downloads" (Android/PWA). */
 export function downloadFile(content: string, filename: string, mime: string): void {
   const name = filename.replace(/[\\/:*?"<>|]+/g, "_");
   const blob = new Blob([content], { type: mime });
 
+  void nativeSave(content, name).then((done) => {
+    if (done) return;
+    webDownload(blob, name);
+  });
+}
+
+function webDownload(blob: Blob, name: string): void {
   const nav = navigator as Navigator & { msSaveOrOpenBlob?: (b: Blob, n: string) => void };
   if (typeof nav.msSaveOrOpenBlob === "function") {
     nav.msSaveOrOpenBlob(blob, name);
     return;
   }
+
 
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
