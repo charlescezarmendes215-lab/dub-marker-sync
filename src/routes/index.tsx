@@ -261,12 +261,21 @@ function Index() {
           const filteredEps = eps.filter((dialogue) =>
             selectedCharacters.includes(dialogue.character.trim().toLowerCase()),
           );
+          const epCharacters = [...new Set(filteredEps.map((d) => d.character.trim()).filter(Boolean))];
+          const multiChar = epCharacters.length > 1;
 
           return (
             <article key={ep} className="rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Episódio {ep}</h2>
-                <span className="rounded-full bg-secondary/80 px-2 py-0.5 text-xs text-muted-foreground">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold">
+                    Episódio {ep}
+                    {epCharacters.length > 0 && (
+                      <span className="text-muted-foreground"> — {epCharacters.join(", ")}</span>
+                    )}
+                  </h2>
+                </div>
+                <span className="shrink-0 rounded-full bg-secondary/80 px-2 py-0.5 text-xs text-muted-foreground">
                   {filteredEps.length} falas
                 </span>
               </div>
@@ -276,6 +285,11 @@ function Index() {
               <ul className="mt-3 space-y-1.5 select-text">
                 {filteredEps.slice(0, 4).map((l, i) => (
                   <li key={i} className="rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs">
+                    {multiChar && (
+                      <span className="mr-2 rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                        {l.character}
+                      </span>
+                    )}
                     <span className="font-mono text-primary">{l.start}</span>
                     <span className="ml-2 text-muted-foreground line-clamp-1">{l.text}</span>
                   </li>
@@ -284,6 +298,7 @@ function Index() {
                   <li className="px-1 text-xs text-muted-foreground">+ {filteredEps.length - 4} falas…</li>
                 )}
               </ul>
+
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   onClick={() =>
