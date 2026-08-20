@@ -93,6 +93,37 @@ function Index() {
     [wbData, selected],
   );
 
+  const selectedCharacters = useMemo(
+    () => (selected ? selected.characters.map((c) => c.trim().toLowerCase()) : []),
+    [selected],
+  );
+
+  // Agrupa separando por Episódio E por Personagem específico
+  const groups = useMemo(() => {
+    const map = new Map<string, { ep: number; character: string; items: Dialogue[] }>();
+
+    for (const l of lines) {
+      if (!l.character) continue;
+      const character = l.character.trim();
+
+      if (
+        selectedCharacters.length > 0 &&
+        !selectedCharacters.includes(character.toLowerCase())
+      ) {
+        continue;
+      }
+
+      const k = `${l.episode}::${character}`;
+      const g = map.get(k) ?? { ep: Number(l.episode), character, items: [] as Dialogue[] };
+      g.items.push(l);
+      map.set(k, g);
+    }
+
+    return [...map.values()].sort(
+      (a, b) => a.ep - b.ep || a.character.localeCompare(b.character),
+    );
+  }, [lines, selectedCharacters]);
+
   const episodes = useMemo(() => {
     const map = new Map<number, Dialogue[]>();
     for (const l of lines) {
@@ -104,10 +135,6 @@ function Index() {
   }, [lines]);
 
   const actorName = selected ? sanitize(selected.actor) : "Dublador";
-  const selectedCharacters = useMemo(
-    () => (selected ? selected.characters.map((c) => c.trim().toLowerCase()) : []),
-    [selected],
-  );
   const videoEps = episodes.filter(([ep]) => wbData?.videoLinks[ep]);
 
   async function forceDownload(url: string, filename: string) {
@@ -370,7 +397,7 @@ function Index() {
                   const ep = entry[0];
                   const url = wbData?.videoLinks[ep];
                   if (!url) return;
-                  setBusyEp(ep);
+                  setBusyEp(String(ep));
                   await forceDownload(url, `Episodio_${ep}_${actorName}.mp4`);
                   setBusyEp(null);
                   setDownloadIdx((i) => i + 1);
@@ -389,7 +416,7 @@ function Index() {
                     onClick={async () => {
                       const url = wbData?.videoLinks[ep];
                       if (!url) return;
-                      setBusyEp(ep);
+                      setBusyEp(String(ep));
                       await forceDownload(url, `Episodio_${ep}_${actorName}.mp4`);
                       setBusyEp(null);
                       setDownloadIdx(i + 1);
