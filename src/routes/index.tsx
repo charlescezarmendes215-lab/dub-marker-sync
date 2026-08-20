@@ -45,8 +45,8 @@ function Index() {
   const [selected, setSelected] = useState<ActorEntry | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadIdx, setDownloadIdx] = useState(0);
-  const [busyEp, setBusyEp] = useState<number | null>(null);
-  const [copiedEp, setCopiedEp] = useState<number | null>(null);
+  const [busyEp, setBusyEp] = useState<string | null>(null);
+  const [copiedEp, setCopiedEp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function copyLines(lines: Dialogue[]) {
@@ -255,54 +255,46 @@ function Index() {
         )}
 
         {/* Episode cards */}
-        {episodes.map(([ep, eps]) => {
+        {groups.map(({ ep, character, items }) => {
           const link = wbData?.videoLinks[ep];
-          // Garante filtragem estrita das falas do episódio
-          const filteredEps = eps.filter((dialogue) =>
-            selectedCharacters.includes(dialogue.character.trim().toLowerCase()),
-          );
-          const epCharacters = [...new Set(filteredEps.map((d) => d.character.trim()).filter(Boolean))];
-          const multiChar = epCharacters.length > 1;
+          const gkey = `${ep}::${character}`;
+          const safeChar = sanitize(character);
 
           return (
-            <article key={ep} className="rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
+            <article key={gkey} className="rounded-2xl border border-border/60 bg-card/85 p-4 backdrop-blur-md">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="text-sm font-semibold">
                     Episódio {ep}
-                    {epCharacters.length > 0 && (
-                      <span className="text-muted-foreground"> — {epCharacters.join(", ")}</span>
-                    )}
+                    <span className="text-muted-foreground"> — {character}</span>
                   </h2>
                 </div>
                 <span className="shrink-0 rounded-full bg-secondary/80 px-2 py-0.5 text-xs text-muted-foreground">
-                  {filteredEps.length} falas
+                  {items.length} falas
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {filteredEps[0]?.start} → {filteredEps[filteredEps.length - 1]?.end}
+                {items[0]?.start} → {items[items.length - 1]?.end}
               </p>
               <ul className="mt-3 space-y-1.5 select-text">
-                {filteredEps.slice(0, 4).map((l, i) => (
+                {items.slice(0, 4).map((l, i) => (
                   <li key={i} className="rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs">
-                    {multiChar && (
-                      <span className="mr-2 rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                        {l.character}
-                      </span>
-                    )}
                     <span className="font-mono text-primary">{l.start}</span>
                     <span className="ml-2 text-muted-foreground line-clamp-1">{l.text}</span>
                   </li>
                 ))}
-                {filteredEps.length > 4 && (
-                  <li className="px-1 text-xs text-muted-foreground">+ {filteredEps.length - 4} falas…</li>
+                {items.length > 4 && (
+                  <li className="px-1 text-xs text-muted-foreground">+ {items.length - 4} falas…</li>
                 )}
               </ul>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   onClick={() =>
-                    void shareOrDownloadSrt(buildSrt(filteredEps), `Episodio_${ep}_${actorName}.srt`)
+                    void shareOrDownloadSrt(
+                      buildSrt(items),
+                      `Episodio_${ep}_${safeChar}_${actorName}.srt`,
+                    )
                   }
                   className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground active:opacity-80"
                 >
@@ -310,25 +302,25 @@ function Index() {
                 </button>
                 <button
                   onClick={async () => {
-                    await copyLines(filteredEps);
-                    setCopiedEp(ep);
+                    await copyLines(items);
+                    setCopiedEp(gkey);
                     setTimeout(() => setCopiedEp(null), 2000);
                   }}
                   className="flex-1 rounded-lg border border-border/60 px-3 py-2 text-center text-xs font-medium active:opacity-80"
                 >
-                  {copiedEp === ep ? "Copiado!" : "Copiar falas"}
+                  {copiedEp === gkey ? "Copiado!" : "Copiar falas"}
                 </button>
                 {link && (
                   <>
                     <button
                       onClick={async () => {
-                        setBusyEp(ep);
+                        setBusyEp(gkey);
                         await forceDownload(link, `Episodio_${ep}_${actorName}.mp4`);
                         setBusyEp(null);
                       }}
                       className="flex-1 rounded-lg border border-border/60 px-3 py-2 text-xs font-medium active:opacity-80"
                     >
-                      {busyEp === ep ? "Baixando…" : "Vídeo"}
+                      {busyEp === gkey ? "Baixando…" : "Vídeo"}
                     </button>
                     <a
                       href={link}
