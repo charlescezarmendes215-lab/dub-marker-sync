@@ -45,8 +45,8 @@ function Index() {
   const [selected, setSelected] = useState<ActorEntry | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadIdx, setDownloadIdx] = useState(0);
-  const [busyEp, setBusyEp] = useState<number | null>(null);
-  const [copiedEp, setCopiedEp] = useState<number | null>(null);
+  const [busyEp, setBusyEp] = useState<string | null>(null);
+  const [copiedEp, setCopiedEp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function copyLines(lines: Dialogue[]) {
