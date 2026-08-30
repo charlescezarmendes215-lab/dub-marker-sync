@@ -1,11 +1,11 @@
 // Gera a pasta estática "dist-mobile" (SPA) usada pelo Capacitor a partir do
-// build web (dist/client). O app é 100% client-side, então basta um index.html
+// build web (.output/public). O app é 100% client-side, então basta um index.html
 // que carregue o bundle do cliente.
 import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = process.cwd();
-const clientDir = resolve(root, "dist/client");
+const clientDir = resolve(root, ".output/public");
 const outDir = resolve(root, "dist-mobile");
 
 const assets = await readdir(resolve(clientDir, "assets"));
@@ -13,7 +13,7 @@ const entry = assets.find((f) => /^index-.*\.js$/.test(f));
 const css = assets.filter((f) => f.endsWith(".css"));
 
 if (!entry) {
-  throw new Error("Bundle de entrada não encontrado em dist/client/assets");
+  throw new Error("Bundle de entrada não encontrado em .output/public/assets");
 }
 
 await rm(outDir, { recursive: true, force: true });
