@@ -10,9 +10,10 @@ await mkdir(outDir, { recursive: true });
 await cp(clientDir, outDir, { recursive: true });
 
 const assets = await readdir(resolve(outDir, "assets"));
-const entry = assets.find((f) => /^index-.*\.js$/.test(f) || /^web-.*\.js$/.test(f));
-const css = assets.filter((f) => f.endsWith(".css"));
+const jsFiles = assets.filter((f) => f.endsWith(".js"));
+const cssFiles = assets.filter((f) => f.endsWith(".css"));
 
+// Garante a inclusão de todos os bundles necessários para inicializar o TanStack Start no client
 const html = `<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
   <head>
@@ -21,11 +22,11 @@ const html = `<!DOCTYPE html>
     <meta name="theme-color" content="#0f172a" />
     <title>DubMarker</title>
     <link rel="icon" href="./favicon.png" />
-${css.map((f) => `    <link rel="stylesheet" href="./assets/${f}" />`).join("\n")}
-    <script type="module" src="./assets/${entry}"></script>
+${cssFiles.map((f) => `    <link rel="stylesheet" href="./assets/${f}" />`).join("\n")}
   </head>
   <body>
     <div id="root"></div>
+${jsFiles.map((f) => `    <script type="module" src="./assets/${f}"></script>`).join("\n")}
   </body>
 </html>
 `;
@@ -35,4 +36,4 @@ try {
   await rm(resolve(outDir, "sw.js"), { force: true });
 } catch {}
 
-console.log(`dist-mobile pronto com sucesso (entry: ${entry})`);
+console.log("dist-mobile compilado com todos os bundles client.");
