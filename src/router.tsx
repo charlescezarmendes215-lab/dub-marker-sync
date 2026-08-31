@@ -5,11 +5,11 @@ import { routeTree } from "./routeTree.gen";
 export const getRouter = () => {
   const queryClient = new QueryClient();
 
-  // Se estiver rodando localmente no app (file:// ou localhost nativo), usa hash history
+  // Detecta se está rodando dentro do WebView nativo do Capacitor/Android
   const isNative = typeof window !== "undefined" && 
     (window.location.protocol === "file:" || 
-     window.location.hostname === "localhost" || 
-     window.location.protocol.startsWith("capacitor:"));
+     window.location.protocol.startsWith("capacitor:") ||
+     (window.location.hostname === "localhost" && !!(window as unknown as { Capacitor?: unknown }).Capacitor));
 
   const router = createRouter({
     routeTree,
