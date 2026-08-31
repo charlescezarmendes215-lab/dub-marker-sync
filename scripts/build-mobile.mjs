@@ -13,7 +13,10 @@ const assets = await readdir(resolve(outDir, "assets"));
 const jsFiles = assets.filter((f) => f.endsWith(".js"));
 const cssFiles = assets.filter((f) => f.endsWith(".css"));
 
-// Garante a inclusão de todos os bundles necessários para inicializar o TanStack Start no client
+// Encontra o arquivo principal de entrada do cliente gerado pelo TanStack
+const mainScript = jsFiles.find((f) => f.startsWith("start-") || f.startsWith("main-") || f.startsWith("index-")) || jsFiles[0];
+const otherScripts = jsFiles.filter((f) => f !== mainScript);
+
 const html = `<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
   <head>
@@ -24,9 +27,10 @@ const html = `<!DOCTYPE html>
     <link rel="icon" href="./favicon.png" />
 ${cssFiles.map((f) => `    <link rel="stylesheet" href="./assets/${f}" />`).join("\n")}
   </head>
-  <body>
+  <body class="bg-background text-foreground">
     <div id="root"></div>
-${jsFiles.map((f) => `    <script type="module" src="./assets/${f}"></script>`).join("\n")}
+${otherScripts.map((f) => `    <script type="module" src="./assets/${f}"></script>`).join("\n")}
+    <script type="module" src="./assets/${mainScript}"></script>
   </body>
 </html>
 `;
@@ -36,4 +40,4 @@ try {
   await rm(resolve(outDir, "sw.js"), { force: true });
 } catch {}
 
-console.log("dist-mobile compilado com todos os bundles client.");
+console.log("dist-mobile compilado com sucesso para o Capacitor!");
