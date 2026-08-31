@@ -1,26 +1,22 @@
-import { cp, mkdir, readdir, rm, writeFile, readFile } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = process.cwd();
 const clientDir = resolve(root, ".output/public");
 const outDir = resolve(root, "dist-mobile");
 
-// 1. Limpa e copia a pasta compilada
 await rm(outDir, { recursive: true, force: true });
 await mkdir(outDir, { recursive: true });
 await cp(clientDir, outDir, { recursive: true });
 
-// 2. Coleta os arquivos JS e CSS gerados
 const assetsDir = resolve(outDir, "assets");
 const assets = await readdir(assetsDir);
 const jsFiles = assets.filter((f) => f.endsWith(".js"));
 const cssFiles = assets.filter((f) => f.endsWith(".css"));
 
-// Identifica os bundles principais
 const mainJs = jsFiles.find((f) => f.startsWith("index-") || f.startsWith("routes-")) || jsFiles[0];
 const otherScripts = jsFiles.filter((f) => f !== mainJs);
 
-// 3. Monta o index.html com caminhos relativos (./assets/...)
 const html = `<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
   <head>
@@ -45,4 +41,4 @@ try {
   await rm(resolve(outDir, "sw.js"), { force: true });
 } catch {}
 
-console.log("dist-mobile gerado com sucesso com caminhos relativos e suporte a Hash History!");
+console.log("dist-mobile gerado com sucesso!");
