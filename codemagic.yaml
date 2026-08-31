@@ -8,7 +8,9 @@ workflows:
       java: 21
     scripts:
       - name: Instalar dependências
-        script: npm install
+        script: |
+          npm install
+          npm install -D @capacitor/assets
       - name: Build web + pasta estática do Capacitor
         script: npm run build:mobile
       - name: Adicionar plataforma Android (se necessário)
@@ -16,6 +18,11 @@ workflows:
           if [ ! -d "android" ]; then
             npx cap add android
           fi
+      - name: Gerar ícones do app
+        script: |
+          mkdir -p resources
+          cp public/icon-512.png resources/icon.png
+          npx @capacitor/assets generate --android
       - name: Sincronizar Capacitor
         script: npx cap sync android
       - name: Compilar APK Debug
