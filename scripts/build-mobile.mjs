@@ -13,15 +13,14 @@ const assets = await readdir(resolve(outDir, "assets"));
 const jsFiles = assets.filter((f) => f.endsWith(".js"));
 const cssFiles = assets.filter((f) => f.endsWith(".css"));
 
-// Encontra o arquivo principal de entrada do cliente gerado pelo TanStack
-const mainScript = jsFiles.find((f) => f.startsWith("start-") || f.startsWith("main-") || f.startsWith("index-")) || jsFiles[0];
-const otherScripts = jsFiles.filter((f) => f !== mainScript);
+// Identifica os bundles gerados
+const mainJs = jsFiles.find((f) => f.startsWith("index-") || f.startsWith("start-") || f.startsWith("routes-")) || jsFiles[0];
 
 const html = `<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#0f172a" />
     <title>DubMarker</title>
     <link rel="icon" href="./favicon.png" />
@@ -29,15 +28,15 @@ ${cssFiles.map((f) => `    <link rel="stylesheet" href="./assets/${f}" />`).join
   </head>
   <body class="bg-background text-foreground">
     <div id="root"></div>
-${otherScripts.map((f) => `    <script type="module" src="./assets/${f}"></script>`).join("\n")}
-    <script type="module" src="./assets/${mainScript}"></script>
+${jsFiles.map((f) => `    <script type="module" src="./assets/${f}"></script>`).join("\n")}
   </body>
 </html>
 `;
 
 await writeFile(resolve(outDir, "index.html"), html, "utf8");
+
 try {
   await rm(resolve(outDir, "sw.js"), { force: true });
 } catch {}
 
-console.log("dist-mobile compilado com sucesso para o Capacitor!");
+console.log("dist-mobile compilado com sucesso com carregamento de todos os bundles para o Capacitor!");
