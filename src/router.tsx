@@ -1,20 +1,20 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createRouter, createHashHistory, createMemoryHistory } from "@tanstack/react-router";
+import { createRouter, createHashHistory } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import { Capacitor } from "@capacitor/core";
 
 export const getRouter = () => {
   const queryClient = new QueryClient();
 
-  // No Android nativo, usa Hash History para rodar perfeitamente no WebView estático
-  const history = Capacitor.isNativePlatform()
-    ? createHashHistory()
-    : undefined;
+  // Se estiver rodando localmente no app (file:// ou localhost nativo), usa hash history
+  const isNative = typeof window !== "undefined" && 
+    (window.location.protocol === "file:" || 
+     window.location.hostname === "localhost" || 
+     window.location.protocol.startsWith("capacitor:"));
 
   const router = createRouter({
     routeTree,
     context: { queryClient },
-    history,
+    history: isNative ? createHashHistory() : undefined,
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
   });
