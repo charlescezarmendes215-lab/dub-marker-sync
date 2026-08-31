@@ -5,7 +5,9 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { SplashScreen } from "@capacitor/splash-screen";
+import { Capacitor } from "@capacitor/core";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -21,9 +23,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "manifest", href: "/manifest.json" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
+      { rel: "icon", type: "image/png", href: "./favicon.png" },
+      { rel: "manifest", href: "./manifest.json" },
+      { rel: "apple-touch-icon", href: "./icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -46,6 +48,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // Oculta a Splash Screen imediatamente após a renderização do React
+    if (Capacitor.isNativePlatform()) {
+      SplashScreen.hide().catch(() => {});
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
