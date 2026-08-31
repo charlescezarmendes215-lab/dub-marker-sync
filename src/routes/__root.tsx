@@ -48,7 +48,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    // Oculta a Splash Screen via bridge nativo global sem exigir import de pacote
     try {
       const cap = (window as unknown as { Capacitor?: { Plugins?: { SplashScreen?: { hide: () => Promise<void> } } } }).Capacitor;
       cap?.Plugins?.SplashScreen?.hide();
