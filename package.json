@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "build:mobile": "vite build && node scripts/build-mobile.mjs",
+    "build:mobile": "MOBILE_BUILD=1 vite build && node scripts/build-mobile.mjs",
     "android:sync": "npm run build:mobile && cap sync android"
   },
   "dependencies": {
