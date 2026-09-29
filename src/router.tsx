@@ -13,7 +13,7 @@ export const getRouter = () => {
   return createRouter({
     routeTree,
     context: { queryClient },
-    history: isNative ? createHashHistory() : undefined,
+    ...(isNative ? { history: createHashHistory() } : {}),
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
   });
