@@ -90,6 +90,7 @@ function Index() {
     );
   }, [wbData, query]);
 
+  // Filtra as linhas garantindo a lista exata do dublador selecionado
   const lines: Dialogue[] = useMemo(
     () => (wbData && selected ? filterDialogues(wbData.dialogues, selected.characters) : []),
     [wbData, selected],
@@ -100,6 +101,7 @@ function Index() {
     [selected],
   );
 
+  // Agrupa separando por Episódio E por Personagem específico
   const groups = useMemo(() => {
     const map = new Map<string, { ep: number; character: string; items: Dialogue[] }>();
 
