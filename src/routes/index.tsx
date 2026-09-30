@@ -48,6 +48,8 @@ function Index() {
   const [busyEp, setBusyEp] = useState<string | null>(null);
   const [copiedEp, setCopiedEp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function copyLines(lines: Dialogue[]) {
     const text = lines.map((l) => `[${l.start}] ${l.text}`).join("\n");
@@ -138,6 +140,19 @@ function Index() {
   const videoEps = episodes.filter(([ep]) => wbData?.videoLinks[ep]);
 
   async function forceDownload(url: string, filename: string) {
+    try {
+      const mod = await import("@/lib/native-save");
+      if (mod.isNative()) {
+        const where = await mod.downloadUrlToDownloads(url, filename);
+        setNotice(`Salvo em ${where}/${filename}`);
+        setTimeout(() => setNotice(null), 4000);
+        return;
+      }
+    } catch {
+      setNotice("Falha ao baixar o vídeo.");
+      setTimeout(() => setNotice(null), 4000);
+      return;
+    }
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error(String(res.status));
@@ -349,14 +364,12 @@ function Index() {
                     >
                       {busyEp === gkey ? "Baixando…" : "Vídeo"}
                     </button>
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      onClick={() => setPreviewUrl(link)}
                       className="rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground"
                     >
                       Prévia
-                    </a>
+                    </button>
                   </>
                 )}
               </div>
@@ -435,6 +448,24 @@ function Index() {
               ))}
             </ul>
           </div>
+        </div>
+      )}
+
+      {previewUrl && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-center bg-black/90 p-3">
+          <button
+            onClick={() => setPreviewUrl(null)}
+            className="mb-2 self-end rounded-lg bg-card px-3 py-1.5 text-xs"
+          >
+            Fechar
+          </button>
+          <video src={previewUrl} controls autoPlay playsInline className="max-h-[80vh] w-full rounded-xl" />
+        </div>
+      )}
+
+      {notice && (
+        <div className="fixed inset-x-4 bottom-6 z-50 rounded-xl bg-card px-4 py-3 text-center text-xs shadow-xl">
+          {notice}
         </div>
       )}
     </main>
