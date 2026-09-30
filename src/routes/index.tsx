@@ -459,7 +459,30 @@ function Index() {
           >
             Fechar
           </button>
-          <video src={previewUrl} controls autoPlay playsInline className="max-h-[80vh] w-full rounded-xl" />
+          <video
+            key={previewUrl}
+            src={previewUrl}
+            controls
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            onWaiting={() => setPreviewState("loading")}
+            onPlaying={() => setPreviewState("ok")}
+            onCanPlay={() => setPreviewState("ok")}
+            onError={() => setPreviewState("error")}
+            className="max-h-[80vh] w-full rounded-xl"
+          />
+          {previewState === "loading" && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Carregando vídeo… (o servidor do vídeo pode demorar alguns segundos)
+            </p>
+          )}
+          {previewState === "error" && (
+            <p className="mt-2 text-center text-xs text-destructive">
+              Não foi possível tocar o vídeo. Verifique sua conexão e tente novamente.
+            </p>
+          )}
         </div>
       )}
 
