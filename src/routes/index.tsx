@@ -36,15 +36,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-function getDirectDriveUrl(url: string | null | undefined): string {
-  if (!url) return "";
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) {
-    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-  }
-  return url;
-}
-
 function Index() {
   const [wbData, setWbData] = useState<Workbook | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -149,8 +140,7 @@ function Index() {
   const actorName = selected ? sanitize(selected.actor) : "Dublador";
   const videoEps = episodes.filter(([ep]) => wbData?.videoLinks[ep]);
 
-  async function forceDownload(rawUrl: string, filename: string) {
-    const url = getDirectDriveUrl(rawUrl);
+  async function forceDownload(url: string, filename: string) {
     try {
       const mod = await import("@/lib/native-save");
       if (mod.isNative()) {
@@ -181,6 +171,7 @@ function Index() {
       a.href = url;
       a.download = filename;
       a.rel = "noopener";
+      a.target = "_blank";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -378,7 +369,7 @@ function Index() {
                     <button
                       onClick={() => {
                         setPreviewState("loading");
-                        setPreviewUrl(getDirectDriveUrl(link));
+                        setPreviewUrl(link);
                       }}
                       className="rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground"
                     >
@@ -469,7 +460,7 @@ function Index() {
         <div className="fixed inset-0 z-50 flex flex-col justify-center bg-black/90 p-3">
           <button
             onClick={() => setPreviewUrl(null)}
-            className="mb-2 self-end rounded-lg bg-card px-3 py-1.5 text-xs"
+            className="mb-2 self-end rounded-lg bg-card px-3 py-1.5 text-xs text-foreground"
           >
             Fechar
           </button>
@@ -478,9 +469,7 @@ function Index() {
             src={previewUrl}
             controls
             autoPlay
-            muted
             playsInline
-            crossOrigin="anonymous"
             preload="auto"
             onWaiting={() => setPreviewState("loading")}
             onPlaying={() => setPreviewState("ok")}
@@ -490,7 +479,7 @@ function Index() {
           />
           {previewState === "loading" && (
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              Carregando vídeo… (o servidor do vídeo pode demorar alguns segundos)
+              Carregando vídeo…
             </p>
           )}
           {previewState === "error" && (
