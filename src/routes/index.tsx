@@ -49,6 +49,7 @@ function Index() {
   const [copiedEp, setCopiedEp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewState, setPreviewState] = useState<"loading" | "ok" | "error">("loading");
   const [notice, setNotice] = useState<string | null>(null);
 
   async function copyLines(lines: Dialogue[]) {
@@ -365,7 +366,10 @@ function Index() {
                       {busyEp === gkey ? "Baixando…" : "Vídeo"}
                     </button>
                     <button
-                      onClick={() => setPreviewUrl(link)}
+                      onClick={() => {
+                        setPreviewState("loading");
+                        setPreviewUrl(link);
+                      }}
                       className="rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground"
                     >
                       Prévia
