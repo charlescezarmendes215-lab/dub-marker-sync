@@ -58,3 +58,25 @@ export async function saveToDownloads(
     return "shared";
   }
 }
+
+/** Baixa um vídeo direto da URL para Download/ (sem abrir seletor do sistema). */
+export async function downloadUrlToDownloads(url: string, filename: string): Promise<string> {
+  const name = filename.replace(/[\\/:*?"<>|]+/g, "_");
+  try {
+    await Filesystem.downloadFile({
+      url,
+      path: `Download/${name}`,
+      directory: Directory.ExternalStorage,
+      recursive: true,
+    });
+    return "Download";
+  } catch {
+    await Filesystem.downloadFile({
+      url,
+      path: `DubMarker/${name}`,
+      directory: Directory.Documents,
+      recursive: true,
+    });
+    return "Documents/DubMarker";
+  }
+}
