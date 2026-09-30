@@ -49,6 +49,7 @@ function Index() {
   const [copiedEp, setCopiedEp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const [previewState, setPreviewState] = useState<"loading" | "ok" | "error">("loading");
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -90,7 +91,6 @@ function Index() {
     );
   }, [wbData, query]);
 
-  // Filtra as linhas garantindo a lista exata do dublador selecionado
   const lines: Dialogue[] = useMemo(
     () => (wbData && selected ? filterDialogues(wbData.dialogues, selected.characters) : []),
     [wbData, selected],
@@ -101,7 +101,6 @@ function Index() {
     [selected],
   );
 
-  // Agrupa separando por Episódio E por Personagem específico
   const groups = useMemo(() => {
     const map = new Map<string, { ep: number; character: string; items: Dialogue[] }>();
 
@@ -139,6 +138,31 @@ function Index() {
 
   const actorName = selected ? sanitize(selected.actor) : "Dublador";
   const videoEps = episodes.filter(([ep]) => wbData?.videoLinks[ep]);
+
+  async function handleOpenPreview(url: string) {
+    setPreviewState("loading");
+    setPreviewUrl(url);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const localUrl = URL.createObjectURL(blob);
+      setPreviewBlobUrl(localUrl);
+      setPreviewState("ok");
+    } catch {
+      // Caso dê falha na busca do blob, usa a URL direta como alternativa
+      setPreviewBlobUrl(url);
+      setPreviewState("ok");
+    }
+  }
+
+  function handleClosePreview() {
+    if (previewBlobUrl && previewBlobUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewBlobUrl);
+    }
+    setPreviewUrl(null);
+    setPreviewBlobUrl(null);
+  }
 
   async function forceDownload(url: string, filename: string) {
     try {
@@ -367,10 +391,7 @@ function Index() {
                       {busyEp === gkey ? "Baixando…" : "Vídeo"}
                     </button>
                     <button
-                      onClick={() => {
-                        setPreviewState("loading");
-                        setPreviewUrl(link);
-                      }}
+                      onClick={() => handleOpenPreview(link)}
                       className="rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground"
                     >
                       Prévia
@@ -456,35 +477,38 @@ function Index() {
         </div>
       )}
 
+      {/* Modal de Prévia com suporte a Blob local */}
       {previewUrl && (
         <div className="fixed inset-0 z-50 flex flex-col justify-center bg-black/90 p-3">
           <button
-            onClick={() => setPreviewUrl(null)}
+            onClick={handleClosePreview}
             className="mb-2 self-end rounded-lg bg-card px-3 py-1.5 text-xs text-foreground"
           >
             Fechar
           </button>
-          <video
-            key={previewUrl}
-            src={previewUrl}
-            controls
-            autoPlay
-            playsInline
-            preload="auto"
-            onWaiting={() => setPreviewState("loading")}
-            onPlaying={() => setPreviewState("ok")}
-            onCanPlay={() => setPreviewState("ok")}
-            onError={() => setPreviewState("error")}
-            className="max-h-[80vh] w-full rounded-xl"
-          />
-          {previewState === "loading" && (
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              Carregando vídeo…
-            </p>
+
+          {previewState === "loading" ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <p className="text-sm font-medium text-foreground">Carregando prévia do vídeo…</p>
+              <p className="mt-1 text-xs text-muted-foreground">Aguarde um momento</p>
+            </div>
+          ) : (
+            <video
+              key={previewBlobUrl || previewUrl}
+              src={previewBlobUrl || previewUrl}
+              controls
+              autoPlay
+              playsInline
+              webkit-playsinline="true"
+              crossOrigin="anonymous"
+              onError={() => setPreviewState("error")}
+              className="max-h-[80vh] w-full rounded-xl"
+            />
           )}
+
           {previewState === "error" && (
             <p className="mt-2 text-center text-xs text-destructive">
-              Não foi possível tocar o vídeo. Verifique sua conexão e tente novamente.
+              Não foi possível tocar a prévia. Tente fazer o download do vídeo.
             </p>
           )}
         </div>
