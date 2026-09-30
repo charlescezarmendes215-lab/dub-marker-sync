@@ -185,7 +185,7 @@ function Index() {
           <input
             ref={fileRef}
             type="file"
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream,application/zip"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
