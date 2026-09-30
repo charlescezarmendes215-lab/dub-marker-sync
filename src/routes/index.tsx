@@ -49,6 +49,7 @@ function Index() {
   const [copiedEp, setCopiedEp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewState, setPreviewState] = useState<"loading" | "ok" | "error">("loading");
   const [notice, setNotice] = useState<string | null>(null);
 
   async function copyLines(lines: Dialogue[]) {
@@ -365,7 +366,10 @@ function Index() {
                       {busyEp === gkey ? "Baixando…" : "Vídeo"}
                     </button>
                     <button
-                      onClick={() => setPreviewUrl(link)}
+                      onClick={() => {
+                        setPreviewState("loading");
+                        setPreviewUrl(link);
+                      }}
                       className="rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground"
                     >
                       Prévia
@@ -459,7 +463,30 @@ function Index() {
           >
             Fechar
           </button>
-          <video src={previewUrl} controls autoPlay playsInline className="max-h-[80vh] w-full rounded-xl" />
+          <video
+            key={previewUrl}
+            src={previewUrl}
+            controls
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            onWaiting={() => setPreviewState("loading")}
+            onPlaying={() => setPreviewState("ok")}
+            onCanPlay={() => setPreviewState("ok")}
+            onError={() => setPreviewState("error")}
+            className="max-h-[80vh] w-full rounded-xl"
+          />
+          {previewState === "loading" && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Carregando vídeo… (o servidor do vídeo pode demorar alguns segundos)
+            </p>
+          )}
+          {previewState === "error" && (
+            <p className="mt-2 text-center text-xs text-destructive">
+              Não foi possível tocar o vídeo. Verifique sua conexão e tente novamente.
+            </p>
+          )}
         </div>
       )}
 
