@@ -19,8 +19,10 @@ workflows:
           fi
       - name: Gerar ícones do app
         script: |
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/*.png
           for d in android/app/src/main/res/mipmap-*; do
             [ -d "$d" ] || continue
+            case "$d" in *anydpi*) continue;; esac
             for f in ic_launcher.png ic_launcher_round.png ic_launcher_foreground.png; do
               cp public/icon-512.png "$d/$f"
             done
